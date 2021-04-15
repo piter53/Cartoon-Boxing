@@ -1,4 +1,6 @@
-package uk.ac.ncl.cartoonboxing;
+package uk.ac.ncl.cartoonboxing.character;
+
+import uk.ac.ncl.cartoonboxing.GameDimensions;
 
 /**
  * This class defines a character controller by the user
@@ -9,7 +11,7 @@ public class PlayerCharacter extends BaseCharacter {
     public PlayerCharacter(CharacterType characterType) {
         super(characterType);
         // set X-coordinate to the middle of the screen
-        setX((GameDimensions.getLevelWidth() - GameDimensions.getCharacterWidth())/2f);
+        setX(GameDimensions.getMiddleSpawnX());
     }
 
     public PlayerCharacter() {

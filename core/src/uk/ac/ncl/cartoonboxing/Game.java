@@ -6,8 +6,13 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.TimeUtils;
 
 import java.util.Iterator;
+
+import uk.ac.ncl.cartoonboxing.character.BaseCharacter;
+import uk.ac.ncl.cartoonboxing.character.HostileCharacter;
+import uk.ac.ncl.cartoonboxing.character.PlayerCharacter;
 
 /**
  * Main class of the game that controls rendering, management of game entities (characters, levels, etc.)
@@ -20,6 +25,8 @@ public class Game extends ApplicationAdapter {
     private PlayerCharacter playerCharacter;
     private Array<BaseCharacter> characterArray;
     private final int MOVING_SPEED_PX = 10000;
+    private long lastSpawnTime;
+    private final long SPAWN_DELTA_TIME = 1000000000;
 
     private int currentScore;
 
@@ -41,9 +48,12 @@ public class Game extends ApplicationAdapter {
         Gdx.gl.glClearColor(0, 0, 0.5f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         camera.update();
+
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
-        batch.draw(playerCharacter.getCharacterTexture(), playerCharacter.getX(), playerCharacter.getY());
+        for (BaseCharacter character : characterArray) {
+            batch.draw(character.getCharacterTexture(), character.getX(), character.getY());
+        }
         batch.end();
 
         if (Gdx.input.justTouched()) {
@@ -51,10 +61,15 @@ public class Game extends ApplicationAdapter {
         }
         moveCharacters();
         playerCharacter.keepPlayerCharacterWithinBounds();
+        spawnBotIfAppropriate();
     }
 
 	@Override
 	public void dispose () {
+        for (BaseCharacter character : characterArray) {
+            character.getCharacterType().getTexture().dispose();
+        }
+        batch.dispose();
 	}
 
     /**
@@ -62,9 +77,8 @@ public class Game extends ApplicationAdapter {
      * Amount of movement of each character is based on their pre-defined speed, and movingSpeedPx constant
      */
     private void moveCharacters() {
-        for (Iterator<BaseCharacter> iter = characterArray.iterator(); iter.hasNext(); ) {
-            BaseCharacter character = iter.next();
-            float characterSpeed = (float)character.getCHARACTER_TYPE().getSpeed();
+        for (BaseCharacter character : characterArray) {
+            float characterSpeed = (float)character.getCharacterType().getSpeed();
             float deltaTime = Gdx.graphics.getDeltaTime();
             float characterX = character.getX();
             if (character.getMovingDirection() == BaseCharacter.Direction.LEFT) {
@@ -72,14 +86,22 @@ public class Game extends ApplicationAdapter {
             } else {
                 character.setX(characterX + MOVING_SPEED_PX * characterSpeed * deltaTime);
             }
-            if (character.isOutOfBounds() && !(character instanceof BaseCharacter)) {
-                iter.remove();
+            if (character.isOutOfBounds() && character instanceof HostileCharacter) {
+                characterArray.removeValue(character, true);
             }
         }
     }
 
 	private void spawnNewBot(){
-        BaseCharacter character = BaseCharacter.generateRandomCharacter(currentScore);
+        HostileCharacter character = HostileCharacter.generateRandomCharacter(currentScore);
+        characterArray.add(character);
+        lastSpawnTime = TimeUtils.nanoTime();
+    }
+
+    private void spawnBotIfAppropriate(){
+        if (TimeUtils.nanoTime() - lastSpawnTime > SPAWN_DELTA_TIME/(currentScore+1)){
+            spawnNewBot();
+        }
     }
 
     public int getCurrentScore() {

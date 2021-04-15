@@ -12,6 +12,9 @@ public final class GameDimensions {
     private static int characterWidth;
     private static int characterHeight;
     private static final double screenToCharacterWidthRatio = 0.15;
+    private static float middleSpawnX;
+    private static float leftmostSpawnX;
+    private static float rightmostSpawnX;
 
     private static GameDimensions instance;
 
@@ -31,6 +34,9 @@ public final class GameDimensions {
         levelHeight = Gdx.graphics.getHeight();
         characterWidth = (int)(screenToCharacterWidthRatio * levelWidth);
         characterHeight = characterWidth;
+        middleSpawnX = (levelWidth - characterWidth)/2f;
+        leftmostSpawnX = 0;
+        rightmostSpawnX = levelWidth - characterWidth;
     }
 
     public static int getLevelWidth() {
@@ -47,5 +53,17 @@ public final class GameDimensions {
 
     public static int getCharacterHeight() {
         return characterHeight;
+    }
+
+    public static float getMiddleSpawnX() {
+        return middleSpawnX;
+    }
+
+    public static float getLeftmostSpawnX() {
+        return leftmostSpawnX;
+    }
+
+    public static float getRightmostSpawnX() {
+        return rightmostSpawnX;
     }
 }

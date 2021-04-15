@@ -1,4 +1,4 @@
-package uk.ac.ncl.cartoonboxing;
+package uk.ac.ncl.cartoonboxing.character;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
@@ -8,15 +8,16 @@ import com.badlogic.gdx.utils.ObjectMap;
 
 import java.util.Random;
 
+import uk.ac.ncl.cartoonboxing.GameDimensions;
+
 /**
  * Class defining a base character of the game, including pre-defined character classes,
  * and character generator.
  * @author Piotr Grela
  * @version 1.0
  */
-public class BaseCharacter {
-    private final CharacterType CHARACTER_TYPE;
-    private static final int DIFFICULTY_SPEED_RATIO = 100;
+public abstract class BaseCharacter {
+    private CharacterType characterType;
     private Rectangle model;
     static final CharacterType DEFAULT_CHARACTER_TYPE = CharacterType.VERY_SLOW_BOI;
     private Direction movingDirection;
@@ -30,11 +31,11 @@ public class BaseCharacter {
 
         private static final Random random = new Random();
 
-        public static PlayerCharacter.Direction getRandomDirection() {
+        public static Direction getRandomDirection() {
             if (random.nextBoolean())
-                return PlayerCharacter.Direction.RIGHT;
+                return Direction.RIGHT;
             else
-                return PlayerCharacter.Direction.LEFT;
+                return Direction.LEFT;
         }
     }
 
@@ -53,8 +54,8 @@ public class BaseCharacter {
         private final Texture texture;
 
         private static final String textureSubfolder = "characters/";
-        private static final ObjectMap<Double,CharacterType> speedToTypeMap = new ObjectMap<Double, CharacterType>();
 
+        private static final ObjectMap<Double,CharacterType> speedToTypeMap = new ObjectMap<Double, CharacterType>();
         static {
             for (CharacterType type : CharacterType.values()){
                 speedToTypeMap.put(type.speed, type);
@@ -68,10 +69,6 @@ public class BaseCharacter {
             this.texture = texture;
         }
 
-        private static Texture textureFromFile (String filename){
-            return new Texture(Gdx.files.internal(textureSubfolder+filename));
-        }
-
         public static CharacterType randomType(double maxSpeed) {
             FloatArray array = new FloatArray();
             for (Double speed : speedToTypeMap.keys()){
@@ -81,6 +78,10 @@ public class BaseCharacter {
             }
             Double randomSpeed = (double)array.random();
             return speedToTypeMap.get(randomSpeed);
+        }
+
+        private static Texture textureFromFile (String filename){
+            return new Texture(Gdx.files.internal(textureSubfolder+filename));
         }
 
         public static CharacterType randomType(){
@@ -109,8 +110,8 @@ public class BaseCharacter {
         model = new Rectangle();
         model.height = GameDimensions.getCharacterHeight();
         model.width = GameDimensions.getCharacterWidth();
-        this.movingDirection = Direction.getRandomDirection();
-        this.CHARACTER_TYPE = characterType;
+        movingDirection = Direction.getRandomDirection();
+        this.characterType = characterType;
     }
 
     public BaseCharacter() {
@@ -119,15 +120,6 @@ public class BaseCharacter {
 
     public void setX(float x) {
         model.x = x;
-    }
-
-    /**
-     *
-     * @param difficulty defines a threshold that a generated random character should not exceed
-     * @return BaseCharacter with random CharacterType
-     */
-    public static BaseCharacter generateRandomCharacter(int difficulty){
-        return new BaseCharacter(CharacterType.randomType(difficulty/ DIFFICULTY_SPEED_RATIO));
     }
 
     /**
@@ -148,12 +140,12 @@ public class BaseCharacter {
         return model.y;
     }
 
-    public CharacterType getCHARACTER_TYPE() {
-        return CHARACTER_TYPE;
+    public CharacterType getCharacterType() {
+        return characterType;
     }
 
     public Texture getCharacterTexture() {
-        return CHARACTER_TYPE.texture;
+        return characterType.texture;
     }
 
     public void setMovingDirection(Direction movingDirection) {
