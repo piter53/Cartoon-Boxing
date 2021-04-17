@@ -9,10 +9,18 @@ public class HostileCharacter extends BaseCharacter {
     public HostileCharacter(CharacterType characterType) {
         super(characterType);
         if (getMovingDirection() == Direction.LEFT) {
-            setX(GameDimensions.getRightmostSpawnX());
+            setX(getRightmostSpawnX());
         } else {
-            setX(GameDimensions.getLeftmostSpawnX());
+            setX(getLeftmostSpawnX());
         }
+    }
+
+    private float getRightmostSpawnX() {
+        return GameDimensions.getLevelWidth();
+    }
+
+    private float getLeftmostSpawnX() {
+        return - getWidth();
     }
 
     /**
@@ -26,7 +34,7 @@ public class HostileCharacter extends BaseCharacter {
 
     @Override
     public boolean isOutOfBounds() {
-        return !(getX() >= -GameDimensions.getCharacterWidth()) || !(getX() < GameDimensions.getLevelWidth());
+        return !((getX() >= - getWidth()) && (getX() <= GameDimensions.getLevelWidth()));
     }
 
 }

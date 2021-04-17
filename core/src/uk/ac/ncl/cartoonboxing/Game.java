@@ -24,7 +24,7 @@ public class Game extends ApplicationAdapter {
     private Array<BaseCharacter> characterArray;
     private final int MOVING_SPEED_PX = 1000;
     private long lastSpawnTime;
-    private final long SPAWN_DELTA_TIME = 1000000000;
+    private final long SPAWN_DELTA_TIME = 10000000000L;
 
     private int currentScore;
 
@@ -51,6 +51,7 @@ public class Game extends ApplicationAdapter {
         batch.begin();
 //        playerCharacter.getSprite().draw(batch);
         for (BaseCharacter character : characterArray) {
+            character.getSprite().setX(character.getX());
             character.getSprite().draw(batch);
         }
         batch.end();
@@ -65,7 +66,7 @@ public class Game extends ApplicationAdapter {
 	@Override
 	public void dispose () {
         for (BaseCharacter character : characterArray) {
-            character.getCharacterType().getTexture().getTexture().dispose();
+            character.getCharacterType().getTexture().dispose();
         }
         batch.dispose();
 	}
@@ -98,14 +99,15 @@ public class Game extends ApplicationAdapter {
             float characterSpeed = (float)character.getCharacterType().getSpeed();
             float deltaTime = Gdx.graphics.getDeltaTime();
             float characterX = character.getX();
-            ;
-            if (character.getMovingDirection() == BaseCharacter.Direction.LEFT) {
-                character.setX(characterX - MOVING_SPEED_PX * characterSpeed * deltaTime);
-            } else {
-                character.setX(characterX + MOVING_SPEED_PX * characterSpeed * deltaTime);
-            }
             if (character.isOutOfBounds() && character instanceof HostileCharacter) {
                 characterArray.removeValue(character, true);
+            }
+            else {
+                if (character.getMovingDirection() == BaseCharacter.Direction.LEFT) {
+                    character.setX(characterX - MOVING_SPEED_PX * characterSpeed * deltaTime);
+                } else {
+                    character.setX(characterX + MOVING_SPEED_PX * characterSpeed * deltaTime);
+                }
             }
         }
     }

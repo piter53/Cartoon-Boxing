@@ -21,7 +21,7 @@ public class PlayerCharacter extends BaseCharacter {
     }
 
     public void flipCharacter(){
-        characterType.getTexture().flip();
+        getCharacterTexture().flip();
         if (movingDirection == Direction.LEFT) {
             movingDirection = Direction.RIGHT;
         }
@@ -33,11 +33,18 @@ public class PlayerCharacter extends BaseCharacter {
     /**
      * A function to make sure that the playerCharacter stays within screen bounds
      */
+    @Override
+    public boolean isOutOfBounds() {
+        return !((getX() >= 0)&&(getX() <= GameDimensions.getLevelWidth() - getWidth()));
+    }
+
     public void keepPlayerCharacterWithinBounds() {
-        if (getX()<0)
-            setX(0);
-        if (getX() > GameDimensions.getLevelWidth() - GameDimensions.getCharacterWidth())
-            setX(GameDimensions.getLevelWidth() - GameDimensions.getCharacterWidth());
+        if (isOutOfBounds()) {
+            if (getX() < 0)
+                setX(0);
+            else
+                setX(GameDimensions.getLevelWidth() - getWidth());
+        }
     }
 
 }
