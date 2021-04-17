@@ -2,6 +2,7 @@ package uk.ac.ncl.cartoonboxing.character;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ObjectMap;
@@ -17,10 +18,9 @@ import uk.ac.ncl.cartoonboxing.GameDimensions;
  * @version 1.0
  */
 public abstract class BaseCharacter {
-    private CharacterType characterType;
-    private Rectangle model;
-    static final CharacterType DEFAULT_CHARACTER_TYPE = CharacterType.VERY_SLOW_BOI;
-    private Direction movingDirection;
+    CharacterType characterType;
+    Rectangle rectangle;
+    Direction movingDirection;
 
     /**
      * An enum representing moving direction of the character. It provides a method to pick the direction randomly.
@@ -37,36 +37,38 @@ public abstract class BaseCharacter {
             else
                 return Direction.LEFT;
         }
+
+
     }
 
     /**
      * An enum for pre-defined character types, that include various movement speeds, and names.
      */
     public enum CharacterType {
-        VERY_SLOW_BOI("Very slow boi", 0, 0.1, textureFromFile("boxer-dude.png")),
-        SLOW_BOI("Slow boi", 1, 0.15, textureFromFile("boxer-dude.png")),
-        MEDIOCRE_BOI("Mediocre boi", 2, 0.3, textureFromFile("boxer-dude.png")),
-        FAST_BOI("Fast boi", 3, 0.9, textureFromFile("boxer-dude.png"));
-
+        VERY_SLOW_BOI("Very slow boi", 0, 0.1, textureFromFile("boxer-dude.png"), Direction.RIGHT),
+        SLOW_BOI("Slow boi", 1, 0.15, textureFromFile("boxer-dude.png"), Direction.RIGHT),
+        MEDIOCRE_BOI("Mediocre boi", 2, 0.3, textureFromFile("boxer-dude.png"), Direction.RIGHT),
+        FAST_BOI("Fast boi", 3, 0.9, textureFromFile("boxer-dude.png"), Direction.RIGHT);
         private final String name;
-        private final int id;
-        private final double speed;
-        private final Texture texture;
 
-        private static final String textureSubfolder = "characters/";
+        private final int ID;
+        private final double SPEED;
+        private final CharacterTexture characterTexture;
+        private static final String TEXTURE_SUBFOLDER = "characters/";
+        private static final CharacterType DEFAULT_CHARACTER_TYPE = CharacterType.VERY_SLOW_BOI;
 
         private static final ObjectMap<Double,CharacterType> speedToTypeMap = new ObjectMap<Double, CharacterType>();
         static {
             for (CharacterType type : CharacterType.values()){
-                speedToTypeMap.put(type.speed, type);
+                speedToTypeMap.put(type.SPEED, type);
             }
         }
 
-        CharacterType(String name, int id, double speed, Texture texture){
+        CharacterType(String name, int id, double speed, Texture texture, Direction textureDirection){
             this.name = name;
-            this.id = id;
-            this.speed = speed;
-            this.texture = texture;
+            this.ID = id;
+            this.SPEED = speed;
+            this.characterTexture = new CharacterTexture(texture, textureDirection);
         }
 
         public static CharacterType randomType(double maxSpeed) {
@@ -77,11 +79,14 @@ public abstract class BaseCharacter {
                 }
             }
             Double randomSpeed = (double)array.random();
-            return speedToTypeMap.get(randomSpeed);
+            CharacterType type = speedToTypeMap.get(randomSpeed);
+            if (type == null) {
+                type = DEFAULT_CHARACTER_TYPE;
+            }
+            return type;
         }
-
         private static Texture textureFromFile (String filename){
-            return new Texture(Gdx.files.internal(textureSubfolder+filename));
+            return new Texture(Gdx.files.internal(TEXTURE_SUBFOLDER +filename));
         }
 
         public static CharacterType randomType(){
@@ -92,71 +97,68 @@ public abstract class BaseCharacter {
             return name;
         }
 
-        public int getId() {
-            return id;
+        public int getID() {
+            return ID;
         }
 
         public double getSpeed() {
-            return speed;
+            return SPEED;
         }
 
-        public Texture getTexture() {
-            return texture;
+        public CharacterTexture getTexture() {
+            return characterTexture;
+        }
+
+        public static CharacterType getDefaultCharacterType() {
+            return DEFAULT_CHARACTER_TYPE;
         }
 
     }
 
     public BaseCharacter(CharacterType characterType){
-        model = new Rectangle();
-        model.height = GameDimensions.getCharacterHeight();
-        model.width = GameDimensions.getCharacterWidth();
-        movingDirection = Direction.getRandomDirection();
         this.characterType = characterType;
+        rectangle = new Rectangle();
+        rectangle.height = GameDimensions.getCharacterHeight();
+        rectangle.width = GameDimensions.getCharacterWidth();
+        movingDirection = Direction.getRandomDirection();
+        if (movingDirection != characterType.getTexture().getDirection()) {
+            characterType.getTexture().flip();
+        }
     }
 
     public BaseCharacter() {
-        this(DEFAULT_CHARACTER_TYPE);
-    }
-
-    public void setX(float x) {
-        model.x = x;
-    }
-
-    /**
-     * Change moving direction to make character go the other way
-     */
-    public void changeMovingDirection(){
-        if (movingDirection == Direction.LEFT)
-            movingDirection = Direction.RIGHT;
-        else
-            movingDirection = Direction.LEFT;
-    }
-
-    public float getX() {
-        return model.x;
-    }
-
-    public float getY() {
-        return model.y;
-    }
-
-    public CharacterType getCharacterType() {
-        return characterType;
-    }
-
-    public Texture getCharacterTexture() {
-        return characterType.texture;
-    }
-
-    public void setMovingDirection(Direction movingDirection) {
-        this.movingDirection = movingDirection;
+        this(CharacterType.DEFAULT_CHARACTER_TYPE);
     }
 
     public boolean isOutOfBounds() {
         return !(getX() >= 0) || !(getX() < GameDimensions.getLevelWidth() - GameDimensions.getCharacterWidth());
     }
 
+    public float getX() {
+        return getSprite().getX();
+    }
+
+    public CharacterType getCharacterType() {
+        return characterType;
+    }
+
+    public CharacterTexture getCharacterTexture() {
+        return characterType.getTexture();
+    }
+
     public Direction getMovingDirection() {
         return movingDirection;
+    }
+
+    public Sprite getSprite() {
+        return characterType.getTexture().getSprite();
+    }
+
+    public void setX(float x) {
+        getSprite().setX(x);
+    }
+
+    public Rectangle getRectangle() {
+        return rectangle;
     }
 }

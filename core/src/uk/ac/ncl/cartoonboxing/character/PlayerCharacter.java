@@ -8,6 +8,8 @@ import uk.ac.ncl.cartoonboxing.GameDimensions;
  */
 public class PlayerCharacter extends BaseCharacter {
 
+    private final static CharacterType DEFAULT_CHARACTER = CharacterType.FAST_BOI;
+
     public PlayerCharacter(CharacterType characterType) {
         super(characterType);
         // set X-coordinate to the middle of the screen
@@ -15,7 +17,17 @@ public class PlayerCharacter extends BaseCharacter {
     }
 
     public PlayerCharacter() {
-        this(DEFAULT_CHARACTER_TYPE);
+        this(DEFAULT_CHARACTER);
+    }
+
+    public void flipCharacter(){
+        characterType.getTexture().flip();
+        if (movingDirection == Direction.LEFT) {
+            movingDirection = Direction.RIGHT;
+        }
+        else{
+            movingDirection = Direction.LEFT;
+        }
     }
 
     /**

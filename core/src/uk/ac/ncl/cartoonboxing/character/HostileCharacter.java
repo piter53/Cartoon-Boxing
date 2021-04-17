@@ -7,7 +7,7 @@ public class HostileCharacter extends BaseCharacter {
     private static final int DIFFICULTY_SPEED_RATIO = 100;
 
     public HostileCharacter(CharacterType characterType) {
-        super();
+        super(characterType);
         if (getMovingDirection() == Direction.LEFT) {
             setX(GameDimensions.getRightmostSpawnX());
         } else {

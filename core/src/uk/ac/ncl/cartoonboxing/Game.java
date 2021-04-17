@@ -8,8 +8,6 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
 
-import java.util.Iterator;
-
 import uk.ac.ncl.cartoonboxing.character.BaseCharacter;
 import uk.ac.ncl.cartoonboxing.character.HostileCharacter;
 import uk.ac.ncl.cartoonboxing.character.PlayerCharacter;
@@ -24,7 +22,7 @@ public class Game extends ApplicationAdapter {
     private Level currentLevel;
     private PlayerCharacter playerCharacter;
     private Array<BaseCharacter> characterArray;
-    private final int MOVING_SPEED_PX = 10000;
+    private final int MOVING_SPEED_PX = 1000;
     private long lastSpawnTime;
     private final long SPAWN_DELTA_TIME = 1000000000;
 
@@ -51,14 +49,14 @@ public class Game extends ApplicationAdapter {
 
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
+//        playerCharacter.getSprite().draw(batch);
         for (BaseCharacter character : characterArray) {
-            batch.draw(character.getCharacterTexture(), character.getX(), character.getY());
+            character.getSprite().draw(batch);
         }
         batch.end();
 
-        if (Gdx.input.justTouched()) {
-            playerCharacter.changeMovingDirection();
-        }
+//        checkForHit();
+        checkForClick();
         moveCharacters();
         playerCharacter.keepPlayerCharacterWithinBounds();
         spawnBotIfAppropriate();
@@ -67,10 +65,29 @@ public class Game extends ApplicationAdapter {
 	@Override
 	public void dispose () {
         for (BaseCharacter character : characterArray) {
-            character.getCharacterType().getTexture().dispose();
+            character.getCharacterType().getTexture().getTexture().dispose();
         }
         batch.dispose();
 	}
+
+	private void checkForClick() {
+        if (Gdx.input.justTouched()) {
+            playerCharacter.flipCharacter();
+        }
+    }
+
+    private void checkForHit(){
+        for (BaseCharacter character : characterArray) {
+            if (!(character instanceof PlayerCharacter)) {
+                if (character.getRectangle().overlaps(playerCharacter.getRectangle())) {
+                    if (character.getX() < playerCharacter.getX() && playerCharacter.getMovingDirection() == BaseCharacter.Direction.LEFT
+                        || character.getX() > playerCharacter.getX() && playerCharacter.getMovingDirection() == BaseCharacter.Direction.RIGHT) {
+                        characterArray.removeValue(character,true);
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * Method responsible for moving all characters stored in the array, and removing those that are out of level bounds. 
@@ -81,6 +98,7 @@ public class Game extends ApplicationAdapter {
             float characterSpeed = (float)character.getCharacterType().getSpeed();
             float deltaTime = Gdx.graphics.getDeltaTime();
             float characterX = character.getX();
+            ;
             if (character.getMovingDirection() == BaseCharacter.Direction.LEFT) {
                 character.setX(characterX - MOVING_SPEED_PX * characterSpeed * deltaTime);
             } else {
