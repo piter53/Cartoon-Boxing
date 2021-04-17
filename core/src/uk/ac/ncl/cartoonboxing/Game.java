@@ -2,8 +2,10 @@ package uk.ac.ncl.cartoonboxing;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
@@ -25,12 +27,15 @@ public class Game extends ApplicationAdapter {
     private final int MOVING_SPEED_PX = 1000;
     private long lastSpawnTime;
     private final long SPAWN_DELTA_TIME = 10000000000L;
+    private BitmapFont bitmapFont;
 
     private int currentScore;
+    private int highScore;
 
     @Override
 	public void create () {
         currentScore = 0;
+        highScore = 0;
         camera = new OrthographicCamera();
         camera.setToOrtho(false);
         batch = new SpriteBatch();
@@ -39,6 +44,8 @@ public class Game extends ApplicationAdapter {
         GameDimensions.update();
         playerCharacter = new PlayerCharacter();
         characterArray.add(playerCharacter);
+        bitmapFont = new BitmapFont();
+        bitmapFont.setColor(Color.RED);
     }
 
 	@Override
@@ -49,14 +56,15 @@ public class Game extends ApplicationAdapter {
 
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
-//        playerCharacter.getSprite().draw(batch);
+        bitmapFont.draw(batch, "Score: " + currentScore + "\nHigh Score: " + highScore, 50, GameDimensions.getLevelHeight() - 50);
+        bitmapFont.getData().setScale(10);
         for (BaseCharacter character : characterArray) {
             character.getSprite().setX(character.getX());
             character.getSprite().draw(batch);
         }
         batch.end();
 
-//        checkForHit();
+        checkForHit();
         checkForClick();
         moveCharacters();
         playerCharacter.keepPlayerCharacterWithinBounds();
@@ -81,11 +89,30 @@ public class Game extends ApplicationAdapter {
         for (BaseCharacter character : characterArray) {
             if (!(character instanceof PlayerCharacter)) {
                 if (character.getRectangle().overlaps(playerCharacter.getRectangle())) {
-                    if (character.getX() < playerCharacter.getX() && playerCharacter.getMovingDirection() == BaseCharacter.Direction.LEFT
-                        || character.getX() > playerCharacter.getX() && playerCharacter.getMovingDirection() == BaseCharacter.Direction.RIGHT) {
-                        characterArray.removeValue(character,true);
+                    if (character.inFrontOf(playerCharacter)) {
+                        characterArray.removeValue(character, true);
+                        currentScore++;
                     }
+                    else {
+                        gameOver();
+                    }
+                    break;
                 }
+            }
+        }
+    }
+
+    private void gameOver(){
+        if (currentScore > highScore)
+            highScore = currentScore;
+        currentScore = 0;
+        eradicateAllBots();
+    }
+
+    private void eradicateAllBots(){
+        for (BaseCharacter character : characterArray){
+            if (character instanceof HostileCharacter){
+                characterArray.removeValue(character, true);
             }
         }
     }
@@ -119,7 +146,7 @@ public class Game extends ApplicationAdapter {
     }
 
     private void spawnBotIfAppropriate(){
-        if (TimeUtils.nanoTime() - lastSpawnTime > SPAWN_DELTA_TIME/(currentScore+1)){
+        if (TimeUtils.nanoTime() - lastSpawnTime > SPAWN_DELTA_TIME - ((currentScore+1)  * 2000)){
             spawnNewBot();
         }
     }

@@ -134,6 +134,11 @@ public abstract class BaseCharacter {
 
     public abstract boolean isOutOfBounds();
 
+    public boolean inFrontOf(BaseCharacter character) {
+        return character.getX() > this.getX() && character.getMovingDirection() == Direction.LEFT
+            || character.getX() < this.getX() && character.getMovingDirection() == Direction.RIGHT;
+    }
+
     public float getX() {
         return rectangle.getX();
     }
