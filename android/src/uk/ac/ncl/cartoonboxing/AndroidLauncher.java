@@ -15,6 +15,6 @@ public class AndroidLauncher extends AndroidApplication {
 		config.useCompass = false;
 		config.useGyroscope = false;
 
-		initialize(new Game(), config);
+		initialize(new GameInstance(), config);
 	}
 }

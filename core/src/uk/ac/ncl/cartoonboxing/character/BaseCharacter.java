@@ -3,9 +3,12 @@ package uk.ac.ncl.cartoonboxing.character;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.FloatArray;
 import com.badlogic.gdx.utils.ObjectMap;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Random;
 
 import lombok.Getter;
@@ -26,6 +29,7 @@ public abstract class BaseCharacter {
     Direction movingDirection;
     @Getter
     final Rectangle rectangle;
+    private static Random random = new Random();
 
     /**
      * An enum representing moving direction of the character. It provides a method to pick the direction randomly.
@@ -55,10 +59,12 @@ public abstract class BaseCharacter {
      * An enum for pre-defined character types, that include various movement speeds, and names.
      */
     public enum CharacterType {
-        VERY_SLOW_BOI("Very slow boi", 0, 0.1, textureFromFile("boxer-dude.png"), Direction.RIGHT),
-        SLOW_BOI("Slow boi", 1, 0.15, textureFromFile("boxer-dude.png"), Direction.RIGHT),
-        MEDIOCRE_BOI("Mediocre boi", 2, 0.3, textureFromFile("boxer-dude.png"), Direction.RIGHT),
-        FAST_BOI("Fast boi", 3, 0.9, textureFromFile("boxer-dude.png"), Direction.RIGHT);
+        VERY_SLOW_BOI("Very slow boi", 0, 0.15, textureFromFile("boxer-dude-blue.png"), Direction.RIGHT),
+        SLOW_BOI("Slow boi", 1, 0.3, textureFromFile("boxer-dude-yellow.png"), Direction.RIGHT),
+        MEDIOCRE_BOI("Mediocre boi", 2, 0.4, textureFromFile("boxer-dude-green.png"), Direction.RIGHT),
+        FAST_BOI("Fast boi", 3, 0.55, textureFromFile("boxer-dude-red.png"), Direction.RIGHT),
+        VERY_FAST_BOI("Very fast boi", 4, 0.70, textureFromFile("boxer-dude-black.png"), Direction.RIGHT),
+        THE_SPECIMEN("The specimen", 5, 1.0, textureFromFile("boxer-dude-white.png"), Direction.RIGHT);
 
         @Getter
         private final String name;
@@ -89,14 +95,19 @@ public abstract class BaseCharacter {
             this.textureDirection = textureDirection;
         }
         public static CharacterType randomType(double maxSpeed) {
-            FloatArray array = new FloatArray();
-            for (Double speed : speedToTypeMap.keys()){
+            ArrayList<Double> array = new ArrayList<>();
+            Array<Double> keys = speedToTypeMap.keys().toArray();
+            for (Double speed : keys){
                 if (speed<=maxSpeed){
-                    array.add((float)speed.doubleValue());
+                    array.add(speed);
                 }
             }
-            Double randomSpeed = (double)array.random();
-            CharacterType type = speedToTypeMap.get(randomSpeed);
+            Double randomSpeed = null;
+            CharacterType type = null;
+            if (!array.isEmpty()) {
+                randomSpeed = array.get(random.nextInt(array.size()));
+                type = speedToTypeMap.get(randomSpeed);
+            }
             if (type == null) {
                 type = DEFAULT_CHARACTER_TYPE;
             }

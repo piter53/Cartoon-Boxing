@@ -1,14 +1,22 @@
 package uk.ac.ncl.cartoonboxing;
 
-import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.scenes.scene2d.ui.List;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
+
+import java.util.Arrays;
 
 import lombok.Getter;
 import uk.ac.ncl.cartoonboxing.character.BaseCharacter;
@@ -20,7 +28,7 @@ import uk.ac.ncl.cartoonboxing.character.PlayerCharacter;
  *
  * @author Piotr Grela
  */
-public class Game extends ApplicationAdapter {
+public class Game implements Screen {
     private OrthographicCamera camera;
     private SpriteBatch batch;
     private Level currentLevel;
@@ -29,15 +37,29 @@ public class Game extends ApplicationAdapter {
     private Array<HostileCharacter> botArray;
     private final int GLOBAL_MOVING_SPEED_PX = 1000;
     private long lastSpawnTime;
+    private long lastGameOverTime = 0;
     private final long SPAWN_DELTA_TIME = 1000000000L;
-    private BitmapFont bitmapFont;
+    private Texture backgroundTexture;
+    FreeTypeFontGenerator fontGenerator;
     @Getter
     private int currentScore;
     @Getter
     private int highScore;
+    private Sprite backgroundSprite;
+    private boolean isGameStarted;
+    private boolean isGameOver;
+    private GameInstance gameInstance;
 
-    @Override
-    public void create() {
+
+    BitmapFont scoreFont;
+    BitmapFont welcomeFont;
+    BitmapFont gameOverFont;
+    BitmapFont scoreAchieved;
+
+    public Game(final GameInstance gameInstance) {
+        this.gameInstance = gameInstance;
+        isGameStarted = false;
+        isGameOver = false;
         currentScore = 0;
         highScore = 0;
         camera = new OrthographicCamera();
@@ -49,13 +71,35 @@ public class Game extends ApplicationAdapter {
         GameDimensions.update();
         playerCharacter = new PlayerCharacter();
         characterArray.add(playerCharacter);
-        bitmapFont = new BitmapFont();
-        bitmapFont.setColor(Color.RED);
         lastSpawnTime = TimeUtils.nanoTime();
+        // Fonts
+        fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/OpenComicFont.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter fontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        fontParameter.size = 100;
+        fontParameter.borderColor = Color.BLACK;
+        fontParameter.color = Color.WHITE;
+        fontParameter.borderWidth = 20;
+        scoreFont = fontGenerator.generateFont(fontParameter);
+        fontParameter.borderWidth = 8;
+        fontParameter.size = GameDimensions.getLevelHeight() / 20;
+        fontParameter.color = Color.RED;
+        welcomeFont = fontGenerator.generateFont(fontParameter);
+        fontParameter.size = GameDimensions.getLevelHeight() / 10;
+        gameOverFont = fontGenerator.generateFont(fontParameter);
+        fontParameter.size = GameDimensions.getLevelHeight() / 20;
+        fontParameter.color = Color.YELLOW;
+        scoreAchieved = fontGenerator.generateFont(fontParameter);
+
+        // background
+        backgroundTexture = new Texture(Gdx.files.internal("backgrounds/background.png"));
+        backgroundSprite = new Sprite(backgroundTexture);
+        float heightWidthRatio = backgroundSprite.getHeight() / backgroundSprite.getWidth();
+        backgroundSprite.setSize(GameDimensions.getLevelHeight() / heightWidthRatio, GameDimensions.getLevelHeight());
+        backgroundSprite.setPosition(0, 0);
     }
 
     @Override
-    public void render() {
+    public void render(float delta) {
         Gdx.gl.glClearColor(0, 0, 0.5f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         camera.update();
@@ -63,17 +107,39 @@ public class Game extends ApplicationAdapter {
         batch.setProjectionMatrix(camera.combined);
 
         batch.begin();
-        bitmapFont.draw(batch, "Score: " + currentScore + "\nHigh Score: " + highScore, 50, GameDimensions.getLevelHeight() - 50);
-        bitmapFont.getData().setScale(10);
-        for (BaseCharacter character : characterArray) {
-            boolean flip = character.isTextureNotPositionedCorrectly();
-            float height = character.getRectangle().height;
-            float width = character.getRectangle().width;
-            batch.draw(character.getCharacterType().getTexture(), flip ? character.getX() + width : character.getX(), character.getY(), flip ? -width : width, height);
+        backgroundSprite.draw(batch);
+        // if game has not been started, display welcome message
+        if (!isGameStarted) {
+            if (isGameOver) {
+                gameOverFont.draw(batch, "Game over!", 0, (float)GameDimensions.getLevelHeight() * 2 / 3, GameDimensions.getLevelWidth(), Align.center, true);
+                scoreAchieved.draw(batch, "Your score: " + currentScore + "\nTap anywhere to try again", 0, (float)GameDimensions.getLevelHeight() / 3, GameDimensions.getLevelWidth(), Align.center, true);
+            }
+            else {
+                drawCharacter(playerCharacter, batch);
+                welcomeFont.draw(batch, "Welcome to Cartoon Boxing!\nTap anywhere to start", 0, (float) GameDimensions.getLevelHeight() / 2, GameDimensions.getLevelWidth(), Align.center, true);
+            }
+        } else {
+            scoreFont.draw(batch, "Score: " + currentScore + "\nHigh Score: " + highScore, 50, GameDimensions.getLevelHeight() - 50);
+            for (BaseCharacter character : characterArray) {
+                drawCharacter(character, batch);
+            }
         }
         batch.end();
 
-        performLevelActivities();
+        if (isGameStarted) {
+            performLevelActivities();
+        } else if (Gdx.input.justTouched()) {
+            isGameStarted = true;
+            currentScore = 0;
+            isGameOver = false;
+        }
+    }
+
+    private void drawCharacter(BaseCharacter character, Batch batch) {
+        boolean flip = character.isTextureNotPositionedCorrectly();
+        float height = character.getRectangle().height;
+        float width = character.getRectangle().width;
+        batch.draw(character.getCharacterType().getTexture(), flip ? character.getX() + width : character.getX(), character.getY(), flip ? -width : width, height);
     }
 
     @Override
@@ -82,14 +148,16 @@ public class Game extends ApplicationAdapter {
             character.getCharacterType().getTexture().dispose();
         }
         batch.dispose();
+        fontGenerator.dispose();
+        backgroundTexture.dispose();
     }
 
     private void performLevelActivities(){
-        checkForHit();
-        moveCharacters();
-        removeCharactersIfAppropriate();
-        checkForClick();
         spawnBotIfAppropriate();
+        checkForHit();
+        checkForClick();
+        removeCharactersIfAppropriate();
+        moveCharacters();
     }
 
     private void checkForClick() {
@@ -116,20 +184,22 @@ public class Game extends ApplicationAdapter {
     }
 
     private void gameOver() {
-        if (currentScore > highScore)
-            highScore = currentScore;
-        currentScore = 0;
-        eradicateAllBots();
-        playerCharacter = new PlayerCharacter();
+        if (TimeUtils.nanoTime() - lastGameOverTime > 1000000000){
+            lastGameOverTime = TimeUtils.nanoTime();
+            lastSpawnTime = TimeUtils.nanoTime();
+            isGameOver = true;
+            isGameStarted = false;
+            if (currentScore > highScore)
+                highScore = currentScore;
+            eradicateAllCharacters();
+            playerCharacter = new PlayerCharacter();
+            characterArray.add(playerCharacter);
+        }
     }
 
-    private void eradicateAllBots() {
-        botArray.clear();
-        for (BaseCharacter character : characterArray) {
-            if (character instanceof HostileCharacter) {
-                characterArray.removeValue(character, true);
-            }
-        }
+    private void eradicateAllCharacters() {
+        Arrays.fill(characterArray.toArray(), null);
+        Arrays.fill(botArray.toArray(), null);
     }
 
     /**
@@ -148,6 +218,10 @@ public class Game extends ApplicationAdapter {
             if (character.isOutOfBounds()) {
                 if (!character.handleOutOfBounds()) {
                     characterArray.removeValue(character, true);
+                    try {
+                        botArray.removeValue((HostileCharacter)character, true);
+                    } catch (Exception e){}
+                    character = null;
                 }
             }
         }
@@ -169,5 +243,31 @@ public class Game extends ApplicationAdapter {
     private void removeBot(HostileCharacter character) {
         botArray.removeValue(character, true);
         characterArray.removeValue(character, true);
+        character = null;
+    }
+
+    @Override
+    public void show() {
+
+    }
+
+    @Override
+    public void resize(int width, int height) {
+
+    }
+
+    @Override
+    public void pause() {
+
+    }
+
+    @Override
+    public void resume() {
+
+    }
+
+    @Override
+    public void hide() {
+
     }
 }

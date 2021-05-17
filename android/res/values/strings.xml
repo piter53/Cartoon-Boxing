@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Cartoon Boxing</string>
+
+  <string name="app_name">Cartoon Boxing</string>
+  <string name="welcome_text">"Welcome to Cartoon Boxing!\nTap anywhere to start"</string>
+
 
 </resources>
+
