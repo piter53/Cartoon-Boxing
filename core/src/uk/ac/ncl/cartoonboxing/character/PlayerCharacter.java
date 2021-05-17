@@ -12,8 +12,6 @@ public class PlayerCharacter extends BaseCharacter {
 
     public PlayerCharacter(CharacterType characterType) {
         super(characterType);
-        // set X-coordinate to the middle of the screen
-        setX(GameDimensions.getMiddleSpawnX());
     }
 
     public PlayerCharacter() {
@@ -21,13 +19,7 @@ public class PlayerCharacter extends BaseCharacter {
     }
 
     public void flipCharacter(){
-        getCharacterTexture().flip();
-        if (movingDirection == Direction.LEFT) {
-            movingDirection = Direction.RIGHT;
-        }
-        else{
-            movingDirection = Direction.LEFT;
-        }
+        movingDirection = Direction.getOppositeDirection(movingDirection);
     }
 
     /**
@@ -38,13 +30,18 @@ public class PlayerCharacter extends BaseCharacter {
         return !((getX() >= 0)&&(getX() <= GameDimensions.getLevelWidth() - getWidth()));
     }
 
-    public void keepPlayerCharacterWithinBounds() {
-        if (isOutOfBounds()) {
-            if (getX() < 0)
-                setX(0);
-            else
-                setX(GameDimensions.getLevelWidth() - getWidth());
-        }
+    @Override
+    void setStartingCoordinates() {
+        // set X-coordinate to the middle of the screen
+        setX(GameDimensions.getMiddleSpawnX());
     }
 
+    @Override
+    public boolean handleOutOfBounds() {
+        if (getX() < 0)
+            setX(0);
+        else
+            setX(GameDimensions.getLevelWidth() - getWidth());
+        return true;
+    }
 }

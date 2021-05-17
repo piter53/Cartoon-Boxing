@@ -8,11 +8,6 @@ public class HostileCharacter extends BaseCharacter {
 
     public HostileCharacter(CharacterType characterType) {
         super(characterType);
-        if (getMovingDirection() == Direction.LEFT) {
-            setX(getRightmostSpawnX());
-        } else {
-            setX(getLeftmostSpawnX());
-        }
     }
 
     private float getRightmostSpawnX() {
@@ -22,19 +17,32 @@ public class HostileCharacter extends BaseCharacter {
     private float getLeftmostSpawnX() {
         return - getWidth();
     }
-
     /**
      *
      * @param difficulty defines a threshold that a generated random character should not exceed
      * @return BaseCharacter with random CharacterType
      */
     public static HostileCharacter generateRandomCharacter(int difficulty){
-        return new HostileCharacter(CharacterType.randomType(difficulty/ DIFFICULTY_SPEED_RATIO));
+        return new HostileCharacter(CharacterType.randomType((float)difficulty/ DIFFICULTY_SPEED_RATIO));
     }
 
     @Override
     public boolean isOutOfBounds() {
         return !((getX() >= - getWidth()) && (getX() <= GameDimensions.getLevelWidth()));
+    }
+
+    @Override
+    void setStartingCoordinates() {
+        if (getMovingDirection() == Direction.LEFT) {
+            setX(getRightmostSpawnX());
+        } else {
+            setX(getLeftmostSpawnX());
+        }
+    }
+
+    @Override
+    public boolean handleOutOfBounds() {
+        return false;
     }
 
 }
