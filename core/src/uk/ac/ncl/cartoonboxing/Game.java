@@ -11,12 +11,9 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
-
-import java.util.Arrays;
 
 import lombok.Getter;
 import uk.ac.ncl.cartoonboxing.character.BaseCharacter;
@@ -50,11 +47,10 @@ public class Game implements Screen {
     private boolean isGameOver;
     private GameInstance gameInstance;
 
-
     BitmapFont scoreFont;
     BitmapFont welcomeFont;
     BitmapFont gameOverFont;
-    BitmapFont scoreAchieved;
+    BitmapFont scoreAchievedFont;
 
     public Game(final GameInstance gameInstance) {
         this.gameInstance = gameInstance;
@@ -75,22 +71,25 @@ public class Game implements Screen {
         // Fonts
         fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/OpenComicFont.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter fontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        fontParameter.size = 100;
+        // scoreFont
+        fontParameter.size = 80;
         fontParameter.borderColor = Color.BLACK;
         fontParameter.color = Color.WHITE;
         fontParameter.borderWidth = 20;
         scoreFont = fontGenerator.generateFont(fontParameter);
+        // welcomeFont
         fontParameter.borderWidth = 8;
         fontParameter.size = GameDimensions.getLevelHeight() / 20;
         fontParameter.color = Color.RED;
         welcomeFont = fontGenerator.generateFont(fontParameter);
+        // gameOverFont
         fontParameter.size = GameDimensions.getLevelHeight() / 10;
         gameOverFont = fontGenerator.generateFont(fontParameter);
+        // scoreAchieved
         fontParameter.size = GameDimensions.getLevelHeight() / 20;
         fontParameter.color = Color.YELLOW;
-        scoreAchieved = fontGenerator.generateFont(fontParameter);
-
-        // background
+        scoreAchievedFont = fontGenerator.generateFont(fontParameter);
+        // background texture
         backgroundTexture = new Texture(Gdx.files.internal("backgrounds/background.png"));
         backgroundSprite = new Sprite(backgroundTexture);
         float heightWidthRatio = backgroundSprite.getHeight() / backgroundSprite.getWidth();
@@ -108,12 +107,13 @@ public class Game implements Screen {
 
         batch.begin();
         backgroundSprite.draw(batch);
-        // if game has not been started, display welcome message
         if (!isGameStarted) {
+            // if the game has not started, but previous round also already happened, display game over message
             if (isGameOver) {
                 gameOverFont.draw(batch, "Game over!", 0, (float)GameDimensions.getLevelHeight() * 2 / 3, GameDimensions.getLevelWidth(), Align.center, true);
-                scoreAchieved.draw(batch, "Your score: " + currentScore + "\nTap anywhere to try again", 0, (float)GameDimensions.getLevelHeight() / 3, GameDimensions.getLevelWidth(), Align.center, true);
+                scoreAchievedFont.draw(batch, "Your score: " + currentScore + "\nTap anywhere to try again", 0, (float)GameDimensions.getLevelHeight() / 3, GameDimensions.getLevelWidth(), Align.center, true);
             }
+            // if game has not been started, display welcome message
             else {
                 drawCharacter(playerCharacter, batch);
                 welcomeFont.draw(batch, "Welcome to Cartoon Boxing!\nTap anywhere to start", 0, (float) GameDimensions.getLevelHeight() / 2, GameDimensions.getLevelWidth(), Align.center, true);
@@ -128,7 +128,7 @@ public class Game implements Screen {
 
         if (isGameStarted) {
             performLevelActivities();
-        } else if (Gdx.input.justTouched()) {
+        } else if (Gdx.input.justTouched() && TimeUtils.nanoTime() - lastGameOverTime > 1000000000) {
             isGameStarted = true;
             currentScore = 0;
             isGameOver = false;
@@ -152,6 +152,9 @@ public class Game implements Screen {
         backgroundTexture.dispose();
     }
 
+    /**
+     * Perform all common checks and activities if game once game is running
+     */
     private void performLevelActivities(){
         spawnBotIfAppropriate();
         checkForHit();
@@ -168,9 +171,14 @@ public class Game implements Screen {
 
     private void processPlayerHit(HostileCharacter character) {
         removeBot(character);
+        // TODO Bot losing animation
         currentScore++;
     }
 
+    /**
+     * Check if player character's model overlaps with any other character's model.
+     * If so, it will check who's "hit" who, and act accordingly.
+     */
     private void checkForHit() {
         for (HostileCharacter character : botArray) {
             if (character.getRectangle().overlaps(playerCharacter.getRectangle())) {
@@ -192,14 +200,17 @@ public class Game implements Screen {
             if (currentScore > highScore)
                 highScore = currentScore;
             eradicateAllCharacters();
+            // TODO apply animations
             playerCharacter = new PlayerCharacter();
             characterArray.add(playerCharacter);
         }
     }
 
     private void eradicateAllCharacters() {
-        Arrays.fill(characterArray.toArray(), null);
-        Arrays.fill(botArray.toArray(), null);
+        characterArray.clear();
+        botArray.clear();
+//        Arrays.fill(characterArray.toArray(), null);
+//        Arrays.fill(botArray.toArray(), null);
     }
 
     /**

@@ -8,7 +8,7 @@ import uk.ac.ncl.cartoonboxing.GameDimensions;
  */
 public class PlayerCharacter extends BaseCharacter {
 
-    private final static CharacterType DEFAULT_CHARACTER = CharacterType.FAST_BOI;
+    private final static CharacterType DEFAULT_CHARACTER = CharacterType.MEDIOCRE_BOI;
 
     public PlayerCharacter(CharacterType characterType) {
         super(characterType);
