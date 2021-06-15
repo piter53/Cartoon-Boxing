@@ -45,4 +45,8 @@ public class HostileCharacter extends BaseCharacter {
         return false;
     }
 
+    @Override
+    public boolean isAtBoundary() {
+        return false;
+    }
 }

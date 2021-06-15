@@ -44,4 +44,9 @@ public class PlayerCharacter extends BaseCharacter {
             setX(GameDimensions.getLevelWidth() - getWidth());
         return true;
     }
+
+    public boolean isAtBoundary() {
+        return movingDirection == Direction.LEFT && getX() == 0 ||
+            movingDirection == Direction.RIGHT && getX() == GameDimensions.getLevelWidth() - getWidth();
+    }
 }

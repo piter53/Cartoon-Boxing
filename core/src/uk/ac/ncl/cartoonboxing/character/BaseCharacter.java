@@ -177,4 +177,6 @@ public abstract class BaseCharacter {
     public abstract boolean isOutOfBounds();
 
     public abstract boolean handleOutOfBounds();
+
+    public abstract boolean isAtBoundary();
 }
