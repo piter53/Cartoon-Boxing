@@ -14,6 +14,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
@@ -30,6 +31,20 @@ import uk.ac.ncl.cartoonboxing.character.PlayerCharacter;
  * @author Piotr Grela
  */
 public class Game implements Screen {
+    //region Constants
+    private final int GLOBAL_MOVING_SPEED_PX = 1000;
+    private final long SPAWN_DELTA_TIME = 1000000000L;
+    //endregion
+    //region Fonts
+    FreeTypeFontGenerator fontGenerator;
+    BitmapFont scoreFont;
+    BitmapFont welcomeFont;
+    BitmapFont gameOverFont;
+    BitmapFont scoreAchievedFont;
+    BitmapFont gamePausedFont;
+    BitmapFont buttonFont;
+    //endregion
+    //region Misc. references
     private OrthographicCamera camera;
     private SpriteBatch batch;
     private Texture backgroundTexture;
@@ -38,95 +53,91 @@ public class Game implements Screen {
     private GameInstance gameInstance;
     private Array<Sound> soundArray;
     private Sound booSound;
-
-    // Characters and level
+    //endregion
+    //region Characters and level
     private Level currentLevel;
     private PlayerCharacter playerCharacter;
     private Array<BaseCharacter> characterArray;
     private Array<HostileCharacter> botArray;
-
-    // Game-state variables
+    //endregion
+    //region Game-state variables
     private long lastSpawnTime;
     private long lastGameOverTime = 0;
     @Getter
     private int currentScore;
     @Getter
     private int highScore;
-
-    // Booleans
+    //endregion
+    //region Booleans
     private boolean isGamePaused;
     private boolean isGameOver;
     private boolean isNewSession;
 
-    // Fonts, etc
-    FreeTypeFontGenerator fontGenerator;
-    BitmapFont scoreFont;
-    BitmapFont welcomeFont;
-    BitmapFont gameOverFont;
-    BitmapFont scoreAchievedFont;
-    BitmapFont gamePausedFont;
-    BitmapFont buttonFont;
-
-    // Constants
-    private final int GLOBAL_MOVING_SPEED_PX = 1000;
-    private final long SPAWN_DELTA_TIME = 1000000000L;
-
+    //endregion
     public Game(final GameInstance gameInstance) {
         this.gameInstance = gameInstance;
-
-        // initial game-state values
+        //region initial game-state values
         isGamePaused = true;
         isGameOver = false;
         isNewSession = true;
         currentScore = 0;
         highScore = 0;
         lastSpawnTime = TimeUtils.nanoTime();
-
-        // Camera and batch
+        //endregion
+        //region Camera and batch
         camera = new OrthographicCamera();
         camera.setToOrtho(false);
         batch = gameInstance.batch;
-
-        // Level and characters
+        //endregion
+        //region Level and characters
         currentLevel = new Level();
         characterArray = new Array<BaseCharacter>();
         botArray = new Array<HostileCharacter>();
-
-        // Update game dimensions based on now-established data
+        //endregion
+        //region Update game dimensions based on now-established data
         GameDimensions.update();
         playerCharacter = new PlayerCharacter();
         characterArray.add(playerCharacter);
-
-        // Fonts
+        //endregion
+        //region Fonts
+        //region fontGenerator and fontParameter
         fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/OpenComicFont.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter fontParameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        // scoreFont
+        //endregion
+        //region scoreFont
         fontParameter.size = 80;
         fontParameter.borderColor = Color.BLACK;
         fontParameter.color = Color.WHITE;
         fontParameter.borderWidth = 20;
         scoreFont = fontGenerator.generateFont(fontParameter);
-        // welcomeFont
+        //endregion
+        //region welcomeFont
         fontParameter.borderWidth = 8;
         fontParameter.size = GameDimensions.getLevelHeight() / 20;
         fontParameter.color = Color.RED;
         welcomeFont = fontGenerator.generateFont(fontParameter);
-        // gameOverFont
+        //endregion
+        //region gameOverFont
         fontParameter.size = GameDimensions.getLevelHeight() / 10;
         gameOverFont = fontGenerator.generateFont(fontParameter);
-        // scoreAchievedFont
+        //endregion
+        //region scoreAchievedFont
+
         fontParameter.size = GameDimensions.getLevelHeight() / 20;
         fontParameter.color = Color.YELLOW;
         scoreAchievedFont = fontGenerator.generateFont(fontParameter);
-        // gamePausedFont
+        //endregion
+        //region gamePausedFont
         fontParameter.color = Color.BLUE;
         gamePausedFont = fontGenerator.generateFont(fontParameter);
-        // buttonFont
+        //endregion
+        //region buttonFont
         fontParameter.color = Color.WHITE;
         fontParameter.size = GameDimensions.getLevelHeight() / 30;
         buttonFont = fontGenerator.generateFont(fontParameter);
-
-        // Textures and buttons
+        //endregion
+        //endregion
+        //region Textures and buttons
         backgroundTexture = new Texture(Gdx.files.internal("backgrounds/background.png"));
         backgroundSprite = new Sprite(backgroundTexture);
         float heightWidthRatio = backgroundSprite.getHeight() / backgroundSprite.getWidth();
@@ -135,7 +146,8 @@ public class Game implements Screen {
         TextButton.TextButtonStyle pauseButtonStyle = new TextButton.TextButtonStyle();
         pauseButtonStyle.font = buttonFont;
         pauseButton = new TextButton("PAUSE", pauseButtonStyle);
-        pauseButton.setPosition(GameDimensions.getLevelWidth()-400, GameDimensions.getLevelHeight()-100);
+        pauseButton.setPosition(GameDimensions.getLevelWidth() - 400, GameDimensions.getLevelHeight() - 100);
+        pauseButton.setTouchable(Touchable.enabled);
         pauseButton.addListener(new EventListener() {
             @Override
             public boolean handle(Event event) {
@@ -143,12 +155,14 @@ public class Game implements Screen {
                 return true;
             }
         });
-        // Sounds
+        //endregion
+        //region Sounds
         soundArray = new Array<>();
         soundArray.add(Gdx.audio.newSound(Gdx.files.internal("sounds/punch1.wav")));
         soundArray.add(Gdx.audio.newSound(Gdx.files.internal("sounds/punch2.wav")));
         soundArray.add(Gdx.audio.newSound(Gdx.files.internal("sounds/punch3.wav")));
         booSound = Gdx.audio.newSound(Gdx.files.internal("sounds/boo.wav"));
+        //endregion
     }
 
     @Override
@@ -163,16 +177,15 @@ public class Game implements Screen {
         if (isGamePaused) {
             // if the game has not started, but previous round also already happened, display game over message
             if (isGameOver) {
-                gameOverFont.draw(batch, "Game over!", 0, (float)GameDimensions.getLevelHeight() * 2 / 3, GameDimensions.getLevelWidth(), Align.center, true);
-                scoreAchievedFont.draw(batch, "Your score: " + currentScore + "\nTap anywhere to try again", 0, (float)GameDimensions.getLevelHeight() / 3, GameDimensions.getLevelWidth(), Align.center, true);
+                gameOverFont.draw(batch, "Game over!", 0, (float) GameDimensions.getLevelHeight() * 2 / 3, GameDimensions.getLevelWidth(), Align.center, true);
+                scoreAchievedFont.draw(batch, "Your score: " + currentScore + "\nTap anywhere to try again", 0, (float) GameDimensions.getLevelHeight() / 3, GameDimensions.getLevelWidth(), Align.center, true);
             }
             // if game has not been started, display welcome message
             else {
-                if (isNewSession){
+                if (isNewSession) {
                     drawCharacter(playerCharacter, batch);
                     welcomeFont.draw(batch, "Welcome to Cartoon Boxing!\nTap anywhere to start", 0, (float) GameDimensions.getLevelHeight() / 2, GameDimensions.getLevelWidth(), Align.center, true);
-                }
-                else {
+                } else {
                     drawCharacters();
                     gamePausedFont.draw(batch, "Game paused\nTap anywhere to resume", 0, (float) GameDimensions.getLevelHeight() / 2, GameDimensions.getLevelWidth(), Align.center, true);
                     scoreFont.draw(batch, "Score: " + currentScore + "\nHigh Score: " + highScore, 50, GameDimensions.getLevelHeight() - 50);
@@ -181,16 +194,17 @@ public class Game implements Screen {
         } else {
             scoreFont.draw(batch, "Score: " + currentScore + "\nHigh Score: " + highScore, 50, GameDimensions.getLevelHeight() - 50);
             drawCharacters();
-            pauseButton.draw(batch,1);
+            pauseButton.draw(batch, 1);
         }
         batch.end();
 
         if (!isGamePaused) {
             performLevelActivities();
         } else if (Gdx.input.justTouched() && TimeUtils.nanoTime() - lastGameOverTime > 1000000000) {
-            if (isGameOver){
-                currentScore = 0;
+            booSound.stop();
+            if (isGameOver) {
                 isGameOver = false;
+                currentScore = 0;
             }
             isGamePaused = false;
             isNewSession = false;
@@ -227,7 +241,7 @@ public class Game implements Screen {
     /**
      * Perform all common checks and activities if game once game is running
      */
-    private void performLevelActivities(){
+    private void performLevelActivities() {
         spawnBotIfAppropriate();
         checkForHit();
         checkForClick();
@@ -266,7 +280,7 @@ public class Game implements Screen {
     }
 
     private void gameOver() {
-        if (TimeUtils.nanoTime() - lastGameOverTime > 1000000000){
+        if (TimeUtils.nanoTime() - lastGameOverTime > 1000000000) {
             booSound.play();
             lastGameOverTime = TimeUtils.nanoTime();
             lastSpawnTime = TimeUtils.nanoTime();
@@ -294,21 +308,22 @@ public class Game implements Screen {
      */
     private void moveCharacters() {
         for (BaseCharacter character : characterArray) {
-            if (!character.isAtBoundary()){
+            if (!character.isAtBoundary()) {
                 float deltaTime = Gdx.graphics.getDeltaTime();
                 character.updateX(GLOBAL_MOVING_SPEED_PX, deltaTime);
             }
         }
     }
 
-    public void removeCharactersIfAppropriate(){
+    public void removeCharactersIfAppropriate() {
         for (BaseCharacter character : characterArray) {
             if (character.isOutOfBounds()) {
                 if (!character.handleOutOfBounds()) {
                     characterArray.removeValue(character, true);
                     try {
-                        botArray.removeValue((HostileCharacter)character, true);
-                    } catch (Exception e){}
+                        botArray.removeValue((HostileCharacter) character, true);
+                    } catch (Exception e) {
+                    }
                     character = null;
                 }
             }
